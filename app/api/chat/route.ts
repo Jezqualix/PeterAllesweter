@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         try {
           await streamChat(llmMessages, (chunk) => {
             fullResponse += chunk;
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+            controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
           });
 
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
