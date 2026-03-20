@@ -6,14 +6,21 @@ export function buildSystemPrompt(vehicles: Vehicle[]): string {
 
   // Compact single-line format per vehicle to stay within context window
   const vehicleList = available.map(v => {
-    const price = v.fullDayPrice ? `€${v.fullDayPrice}/dag` : v.halfDayPrice ? `€${v.halfDayPrice}/½dag` : '';
-    return `• ${v.year} ${v.brand} ${v.model} | ${v.type} | ${v.seats}pl | ${v.transmissionType} | ${v.engineTypeName || v.fuelType || ''} | ${price} | ${v.locationCity || ''}`;
+    const prices = [
+      v.halfDayPrice  ? `½dag €${v.halfDayPrice}`   : null,
+      v.fullDayPrice  ? `dag €${v.fullDayPrice}`     : null,
+      v.weekendPrice  ? `weekend €${v.weekendPrice}` : null,
+      v.weekPrice     ? `week €${v.weekPrice}`       : null,
+      v.monthPrice    ? `maand €${v.monthPrice}`     : null,
+    ].filter(Boolean).join(', ');
+    return `• ${v.year} ${v.brand} ${v.model} | ${v.type} | ${v.seats}pl | ${v.transmissionType} | ${v.engineTypeName || v.fuelType || ''} | ${prices || 'prijs op aanvraag'} | ${v.locationCity || ''}`;
   }).join('\n');
 
   return `Je bent een klantenservice-assistent voor PeterAllesweter autoverhuur (België). Antwoord in het Nederlands. Wees vriendelijk en bondig.
 
 Je kan klanten helpen met: voertuigen zoeken, prijzen en beschikbaarheid, reserveringen.
 Bij een reservering: vraag naar gewenste periode en voertuig.
+Gebruik ALTIJD de prijzen uit de voertuigenlijst hieronder. Bereken nooit zelf een prijs op basis van dagprijs × aantal dagen — elk huurtype heeft een vaste prijs.
 
 BESCHIKBARE VOERTUIGEN (${available.length} van ${vehicles.length}):
 ${vehicleList || 'Geen voertuigen beschikbaar.'}
