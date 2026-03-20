@@ -37,7 +37,9 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirect);
+      // Non-admin users cannot access /admin — send them to the homepage
+      const destination = data.user?.role === 'admin' ? redirect : '/';
+      router.push(destination);
     } catch {
       setError('Er is een fout opgetreden. Probeer opnieuw.');
     } finally {
