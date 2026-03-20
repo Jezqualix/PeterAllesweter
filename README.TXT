@@ -1,1 +1,3 @@
-Dit is gewoon een readme.txt testfile om GIT te testen.
+This is a Claude Code AI try out project to learn the ropes of Vibe Coding.
+
+And also how to work with GIT without deleting everything by accident...
