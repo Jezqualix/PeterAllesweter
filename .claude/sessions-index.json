@@ -1,0 +1,31 @@
+{
+  "sessions": [
+    {
+      "id": "3b515509-0945-44fd-9988-473df8d643d8",
+      "firstPrompt": "(empty)",
+      "customTitle": "Session 3b515509",
+      "messageCount": 28,
+      "createdAt": "2026-03-19T17:45:04.000Z",
+      "lastUpdated": "2026-03-19T17:47:13.535Z",
+      "path": "c--DEVELOPMENT-PeterAllesweter\\3b515509-0945-44fd-9988-473df8d643d8.jsonl"
+    },
+    {
+      "id": "f70d211a-f5b8-4d1c-ae49-6083ea9ff502",
+      "firstPrompt": "(empty)",
+      "customTitle": "Session f70d211a",
+      "messageCount": 650,
+      "createdAt": "2026-03-19T12:50:07.706Z",
+      "lastUpdated": "2026-03-19T17:18:27.771Z",
+      "path": "c--DEVELOPMENT-PeterAllesweter\\f70d211a-f5b8-4d1c-ae49-6083ea9ff502.jsonl"
+    },
+    {
+      "id": "358ff78e-e35f-43fa-8835-dc49cdfa0515",
+      "firstPrompt": "(empty)",
+      "customTitle": "Session 358ff78e",
+      "messageCount": 22,
+      "createdAt": "2026-03-19T12:43:29.493Z",
+      "lastUpdated": "2026-03-19T12:48:56.597Z",
+      "path": "c--DEVELOPMENT-PeterAllesweter\\358ff78e-e35f-43fa-8835-dc49cdfa0515.jsonl"
+    }
+  ]
+}

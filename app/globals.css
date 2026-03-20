@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --brand-600: #007c30;
+  --brand-700: #026c3d;
+  --brand-900: #003012;
+  --accent:    #ffdd00;
+  --text-body: #494949;
+  --text-muted:#616161;
+  --bg:        #f3f3f3;
+  --border:    #d6d6d6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-body);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: var(--brand-600); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-700); }
+
+/* CTA button utility */
+.btn-cta {
+  @apply bg-accent text-brand-900 font-bold hover:bg-accent-hover px-6 py-3 rounded-md transition-colors;
+}
+
+/* Streaming cursor */
+.streaming-cursor::after {
+  content: '▋';
+  display: inline-block;
+  animation: blink 1s step-end infinite;
+  color: var(--brand-600);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
