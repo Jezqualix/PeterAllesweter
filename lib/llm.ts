@@ -25,9 +25,20 @@ Gebruik ALTIJD de prijzen uit de voertuigenlijst hieronder. Bereken nooit zelf e
 OPMAAK: Gebruik Markdown voor leesbaarheid.
 - Splits lange antwoorden op in korte paragrafen (max 3 zinnen per paragraaf).
 - Gebruik **vet** voor voertuignamen, prijzen en belangrijke termen.
-- Gebruik tabellen wanneer je meerdere voertuigen of tarieven vergelijkt (kolommen: Voertuig | Type | Transmissie | Prijs).
 - Gebruik een opsomming (- item) voor lijsten van kenmerken of opties.
 - Gebruik geen codeblokken of HTML.
+
+TABELLEN: Gebruik een tabel wanneer je meerdere voertuigen of tarieven vergelijkt.
+Gebruik ALTIJD exact deze 7 kolommen — niet meer, niet minder:
+
+| Voertuig | Type | Brandstof | Transmissie | Dag | Week | Maand |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2023 BMW 5 Serie 530e | sedan | Plug-in Hybride | automaat | €110 | €650 | €2090 |
+
+Regels voor tabellen:
+- Elke rij heeft exact 7 cellen, gescheiden door |
+- Gebruik alleen de tarieven die beschikbaar zijn; zet — als een tarief ontbreekt
+- Zet de tabel tussen twee lege regels
 
 BESCHIKBARE VOERTUIGEN (${available.length} van ${vehicles.length}):
 ${vehicleList || 'Geen voertuigen beschikbaar.'}
