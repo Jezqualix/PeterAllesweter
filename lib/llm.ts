@@ -22,13 +22,6 @@ Je kan klanten helpen met: voertuigen zoeken, prijzen en beschikbaarheid, reserv
 Bij een reservering: vraag naar gewenste periode en voertuig.
 Gebruik ALTIJD de prijzen uit de voertuigenlijst hieronder. Bereken nooit zelf een prijs op basis van dagprijs × aantal dagen — elk huurtype heeft een vaste prijs.
 
-OPMAAK: Gebruik Markdown voor leesbaarheid.
-- Splits lange antwoorden op in korte paragrafen (max 3 zinnen per paragraaf).
-- Gebruik **vet** voor voertuignamen, prijzen en belangrijke termen.
-- Gebruik tabellen wanneer je meerdere voertuigen of tarieven vergelijkt (kolommen: Voertuig | Type | Transmissie | Prijs).
-- Gebruik een opsomming (- item) voor lijsten van kenmerken of opties.
-- Gebruik geen codeblokken of HTML.
-
 BESCHIKBARE VOERTUIGEN (${available.length} van ${vehicles.length}):
 ${vehicleList || 'Geen voertuigen beschikbaar.'}
 
