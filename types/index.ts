@@ -116,6 +116,17 @@ export interface AuthUser {
   role: 'admin' | 'user';
 }
 
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+  forcePasswordReset: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+}
+
 export interface VehicleFilters {
   brand?: string;
   model?: string;

@@ -1,7 +1,7 @@
 import sql from 'mssql';
 import {
   Vehicle, EngineType, RentalLocation, Conversation, Message,
-  VehicleFilters, Rental, CreateRentalInput,
+  VehicleFilters, Rental, CreateRentalInput, AdminUser,
 } from '@/types';
 
 const dbConfig: sql.config = {
@@ -414,4 +414,85 @@ export async function logVehicleQuery(
       INSERT INTO VehicleQueries (conversationId, vehicleId, queryType, response, timestamp)
       VALUES (@conversationId, @vehicleId, @queryType, @response, GETDATE())
     `);
+}
+
+// ─── Admin Users ──────────────────────────────────────────────────────────────
+
+export async function getUsers(filters?: { search?: string; role?: string }): Promise<AdminUser[]> {
+  const db = await getPool();
+  const req = db.request();
+  let query = `
+    SELECT id, name, email, role, isActive, forcePasswordReset, lastLogin, createdAt
+    FROM AdminUsers WHERE 1=1
+  `;
+  if (filters?.search) {
+    query += ' AND (name LIKE @search OR email LIKE @search)';
+    req.input('search', sql.NVarChar, `%${filters.search}%`);
+  }
+  if (filters?.role) {
+    query += ' AND role = @role';
+    req.input('role', sql.NVarChar, filters.role);
+  }
+  query += ' ORDER BY createdAt DESC';
+  const result = await req.query(query);
+  return result.recordset as AdminUser[];
+}
+
+export async function getUserById(id: number): Promise<AdminUser | null> {
+  const db = await getPool();
+  const result = await db.request()
+    .input('id', sql.Int, id)
+    .query('SELECT id, name, email, role, isActive, forcePasswordReset, lastLogin, createdAt FROM AdminUsers WHERE id = @id');
+  return result.recordset[0] || null;
+}
+
+export async function getUserByEmail(email: string): Promise<(AdminUser & { passwordHash: string }) | null> {
+  const db = await getPool();
+  const result = await db.request()
+    .input('email', sql.NVarChar, email)
+    .query('SELECT id, name, email, role, isActive, forcePasswordReset, lastLogin, createdAt, passwordHash FROM AdminUsers WHERE email = @email');
+  return result.recordset[0] || null;
+}
+
+export async function createUser(data: {
+  name: string; email: string; passwordHash: string; role: 'admin' | 'user';
+}): Promise<number> {
+  const db = await getPool();
+  const result = await db.request()
+    .input('name',         sql.NVarChar, data.name)
+    .input('email',        sql.NVarChar, data.email)
+    .input('passwordHash', sql.NVarChar, data.passwordHash)
+    .input('role',         sql.NVarChar, data.role)
+    .query(`
+      INSERT INTO AdminUsers (name, email, passwordHash, role)
+      OUTPUT INSERTED.id
+      VALUES (@name, @email, @passwordHash, @role)
+    `);
+  return result.recordset[0].id;
+}
+
+export async function updateUser(id: number, data: Partial<{
+  name: string; email: string; passwordHash: string;
+  role: string; isActive: boolean; forcePasswordReset: boolean;
+}>): Promise<void> {
+  const db = await getPool();
+  const req = db.request().input('id', sql.Int, id);
+  const fields: string[] = [];
+
+  if (data.name             !== undefined) { fields.push('name = @name');                         req.input('name',               sql.NVarChar, data.name); }
+  if (data.email            !== undefined) { fields.push('email = @email');                       req.input('email',              sql.NVarChar, data.email); }
+  if (data.passwordHash     !== undefined) { fields.push('passwordHash = @passwordHash');         req.input('passwordHash',       sql.NVarChar, data.passwordHash); }
+  if (data.role             !== undefined) { fields.push('role = @role');                         req.input('role',               sql.NVarChar, data.role); }
+  if (data.isActive         !== undefined) { fields.push('isActive = @isActive');                 req.input('isActive',           sql.Bit,      data.isActive ? 1 : 0); }
+  if (data.forcePasswordReset !== undefined) { fields.push('forcePasswordReset = @forcePasswordReset'); req.input('forcePasswordReset', sql.Bit, data.forcePasswordReset ? 1 : 0); }
+
+  if (fields.length === 0) return;
+  await req.query(`UPDATE AdminUsers SET ${fields.join(', ')} WHERE id = @id`);
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  const db = await getPool();
+  await db.request()
+    .input('id', sql.Int, id)
+    .query('DELETE FROM AdminUsers WHERE id = @id');
 }

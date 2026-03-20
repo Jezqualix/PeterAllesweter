@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Loader2, ChevronDown, ChevronUp, MessageSquare, Car } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, ChevronDown, ChevronUp, MessageSquare, Car, Users, Key, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Vehicle, EngineType, Conversation, Message } from '@/types';
+import { Vehicle, EngineType, Conversation, Message, AdminUser } from '@/types';
 
 // ─── Vehicle Form ─────────────────────────────────────────────────────────────
 
@@ -443,10 +443,390 @@ function ConversationsTab() {
   );
 }
 
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+
+interface UserFormData {
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+}
+
+const emptyUserForm: UserFormData = { name: '', email: '', password: '', role: 'user', isActive: true };
+
+function userToForm(u: AdminUser): UserFormData {
+  return { name: u.name, email: u.email, password: '', role: u.role, isActive: u.isActive };
+}
+
+function UsersTab() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [form, setForm] = useState<UserFormData>(emptyUserForm);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteType, setDeleteType] = useState<'soft' | 'hard'>('soft');
+  const [deleting, setDeleting] = useState(false);
+
+  const [pwdUserId, setPwdUserId] = useState<number | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (roleFilter !== 'all') params.set('role', roleFilter);
+    const res = await fetch(`/api/users?${params}`);
+    if (res.ok) {
+      setUsers(await res.json());
+    } else {
+      setError('Kon gebruikers niet laden.');
+    }
+    setLoading(false);
+  }, [search, roleFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  function openNew() {
+    setEditUser(null);
+    setForm(emptyUserForm);
+    setFormError(null);
+    setDialogOpen(true);
+  }
+
+  function openEdit(u: AdminUser) {
+    setEditUser(u);
+    setForm(userToForm(u));
+    setFormError(null);
+    setDialogOpen(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setFormError(null);
+    const body: Record<string, unknown> = {
+      name: form.name, email: form.email, role: form.role,
+    };
+    if (!editUser) {
+      body.password = form.password;
+    } else {
+      body.isActive = form.isActive;
+      if (form.password) body.password = form.password;
+    }
+
+    const res = editUser
+      ? await fetch(`/api/users/${editUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      : await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+    if (res.ok) {
+      setDialogOpen(false);
+      load();
+    } else {
+      const data = await res.json();
+      setFormError(data.error || 'Opslaan mislukt');
+    }
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    if (deleteType === 'soft') {
+      await fetch(`/api/users/${deleteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: false }),
+      });
+    } else {
+      await fetch(`/api/users/${deleteId}`, { method: 'DELETE' });
+    }
+    setDeleteId(null);
+    setDeleting(false);
+    load();
+  }
+
+  async function handlePasswordReset() {
+    if (!pwdUserId || !newPassword) return;
+    setPwdSaving(true);
+    setPwdError(null);
+    const res = await fetch(`/api/users/${pwdUserId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newPassword, forcePasswordReset: false }),
+    });
+    if (res.ok) {
+      setPwdUserId(null);
+      setNewPassword('');
+    } else {
+      const data = await res.json();
+      setPwdError(data.error || 'Opslaan mislukt');
+    }
+    setPwdSaving(false);
+  }
+
+  function openPasswordReset(userId: number) {
+    setPwdUserId(userId);
+    setNewPassword('');
+    setPwdError(null);
+  }
+
+  const field = (key: keyof UserFormData, value: string | boolean) =>
+    setForm(f => ({ ...f, [key]: value }));
+
+  const roleBadge = (role: string) =>
+    role === 'admin'
+      ? <Badge className="bg-brand-600 text-white text-xs">Admin</Badge>
+      : <Badge variant="outline" className="text-xs">Gebruiker</Badge>;
+
+  const statusBadge = (isActive: boolean) =>
+    isActive
+      ? <Badge variant="available" className="text-xs">Actief</Badge>
+      : <Badge variant="unavailable" className="text-xs">Inactief</Badge>;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h2 className="text-xl font-semibold text-[#494949]">Gebruikers ({users.length})</h2>
+        <Button onClick={openNew} className="gap-2 self-start sm:self-auto">
+          <Plus className="h-4 w-4" /> Nieuwe gebruiker
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <input
+          type="search"
+          placeholder="Zoeken op naam of email..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 px-3 py-2 text-sm border border-[#d6d6d6] rounded-md bg-white text-[#494949] placeholder:text-[#616161] focus:outline-none focus:ring-2 focus:ring-brand-600"
+        />
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Alle rollen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle rollen</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="user">Gebruiker</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-600 mb-4">{error}</p>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-[#d6d6d6] overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-[#f3f3f3] border-b border-[#d6d6d6]">
+              <tr>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">ID</th>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">Naam</th>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">Email</th>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">Rol</th>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">Laatste login</th>
+                <th className="text-left px-4 py-3 text-[#616161] font-medium">Status</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#d6d6d6]">
+              {users.map(u => (
+                <tr key={u.id} className="hover:bg-[#f9f9f9]">
+                  <td className="px-4 py-3 text-[#616161] text-xs font-mono">{u.id}</td>
+                  <td className="px-4 py-3 font-medium text-[#494949] whitespace-nowrap">{u.name}</td>
+                  <td className="px-4 py-3 text-[#616161]">{u.email}</td>
+                  <td className="px-4 py-3">{roleBadge(u.role)}</td>
+                  <td className="px-4 py-3 text-[#616161] text-xs whitespace-nowrap">
+                    {u.lastLogin ? new Date(u.lastLogin).toLocaleString('nl-BE') : '—'}
+                  </td>
+                  <td className="px-4 py-3">{statusBadge(u.isActive)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1 justify-end">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(u)} title="Bewerken">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => openPasswordReset(u.id)} title="Wachtwoord instellen">
+                        <Key className="h-3.5 w-3.5 text-amber-500" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => { setDeleteId(u.id); setDeleteType('soft'); }} title="Deactiveren / verwijderen">
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-16 text-center text-[#616161]">
+                    Geen gebruikers gevonden.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add / Edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editUser ? 'Gebruiker bewerken' : 'Nieuwe gebruiker'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Naam</Label>
+              <Input value={form.name} onChange={e => field('name', e.target.value)} placeholder="Volledige naam" />
+            </div>
+            <div className="space-y-1">
+              <Label>Email</Label>
+              <Input type="email" value={form.email} onChange={e => field('email', e.target.value)} placeholder="email@voorbeeld.be" />
+            </div>
+            <div className="space-y-1">
+              <Label>{editUser ? 'Nieuw wachtwoord (leeg = ongewijzigd)' : 'Wachtwoord'}</Label>
+              <Input type="password" value={form.password} onChange={e => field('password', e.target.value)} placeholder={editUser ? 'Laat leeg om niet te wijzigen' : 'Minimaal 8 tekens'} />
+            </div>
+            <div className="space-y-1">
+              <Label>Rol</Label>
+              <Select value={form.role} onValueChange={v => field('role', v as 'admin' | 'user')}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Gebruiker</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {editUser && (
+              <div className="space-y-1">
+                <Label>Status</Label>
+                <Select value={form.isActive ? 'active' : 'inactive'} onValueChange={v => field('isActive', v === 'active')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Actief</SelectItem>
+                    <SelectItem value="inactive">Inactief</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {formError && <p className="text-sm text-red-600">{formError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuleren</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Opslaan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete / deactivate confirmation dialog */}
+      <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Gebruiker verwijderen</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[#616161] mb-3">Kies hoe u wilt verwijderen:</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => setDeleteType('soft')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm text-left transition-colors ${deleteType === 'soft' ? 'border-brand-600 bg-brand-600/5' : 'border-[#d6d6d6] hover:bg-[#f9f9f9]'}`}
+            >
+              <UserX className="h-4 w-4 text-amber-500 shrink-0" />
+              <div>
+                <p className="font-medium text-[#494949]">Deactiveren</p>
+                <p className="text-xs text-[#616161]">Gebruiker blijft in database maar kan niet meer inloggen</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setDeleteType('hard')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm text-left transition-colors ${deleteType === 'hard' ? 'border-red-500 bg-red-50' : 'border-[#d6d6d6] hover:bg-[#f9f9f9]'}`}
+            >
+              <Trash2 className="h-4 w-4 text-red-500 shrink-0" />
+              <div>
+                <p className="font-medium text-[#494949]">Permanent verwijderen</p>
+                <p className="text-xs text-[#616161]">Kan niet ongedaan worden gemaakt</p>
+              </div>
+            </button>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Annuleren</Button>
+            <Button
+              variant={deleteType === 'hard' ? 'destructive' : 'default'}
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {deleteType === 'soft' ? 'Deactiveren' : 'Verwijderen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password reset dialog */}
+      <Dialog open={pwdUserId !== null} onOpenChange={() => setPwdUserId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Wachtwoord instellen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label>Nieuw wachtwoord</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Minimaal 8 tekens"
+              />
+            </div>
+            {pwdError && <p className="text-sm text-red-600">{pwdError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPwdUserId(null)}>Annuleren</Button>
+            <Button onClick={handlePasswordReset} disabled={pwdSaving || !newPassword}>
+              {pwdSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Instellen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'vehicles' | 'conversations'>('vehicles');
+  const [tab, setTab] = useState<'vehicles' | 'conversations' | 'users'>('vehicles');
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -473,9 +853,19 @@ export default function AdminPage() {
         >
           <MessageSquare className="h-4 w-4" /> Gesprekken
         </button>
+        <button
+          onClick={() => setTab('users')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === 'users' ? 'bg-brand-600 text-white' : 'text-[#616161] hover:text-[#494949]'
+          }`}
+        >
+          <Users className="h-4 w-4" /> Gebruikers
+        </button>
       </div>
 
-      {tab === 'vehicles' ? <VehiclesTab /> : <ConversationsTab />}
+      {tab === 'vehicles' && <VehiclesTab />}
+      {tab === 'conversations' && <ConversationsTab />}
+      {tab === 'users' && <UsersTab />}
     </div>
   );
 }
