@@ -67,7 +67,10 @@ module.exports = {
 **After:**
 ```css
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 ```
+
+> **Note:** The Google Fonts `@import url(...)` must be placed directly after `@import "tailwindcss"`. CSS requires all `@import` statements to precede any other rules. Moving it after `:root {}` or other declarations will break font loading.
 
 Add `@theme {}` block with all custom design tokens (replacing `tailwind.config.ts` theme):
 
@@ -87,6 +90,9 @@ Add `@theme {}` block with all custom design tokens (replacing `tailwind.config.
   --color-accent:       #ffdd00;
   --color-accent-hover: #e6c800;
   --color-accent-light: #fff8cc;
+  /* Note: flat names --color-accent-hover and --color-accent-light generate
+     the same utility classes (bg-accent-hover, bg-accent-light) as v3's
+     nested object syntax did. No class name changes in templates. */
 
   --font-sans: 'Inter', system-ui, sans-serif;
 }
@@ -122,7 +128,7 @@ Run `npm run dev` and check:
 ## Risk
 
 - `@apply` with custom utilities (e.g. `btn-cta`) still works in v4 — low risk
-- `darkMode: ['class']` config in v4 is handled differently — needs verification
+- `darkMode: ['class']` config in v4 is handled differently. A search of the codebase confirms no `dark:` utility classes are currently used, so no action is required. If dark mode support is added in the future, add `@variant dark (&:where(.dark, .dark *));` to `globals.css`.
 - Class name changes: some v3 utilities were renamed in v4 (e.g. `shadow-sm` behavior) — verify visually
 
 ---
