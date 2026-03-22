@@ -94,3 +94,8 @@ npm run dev       # http://localhost:3000
 npm run build
 npm start
 ```
+## MCP servers
+- mcp_servers ["context7"]
+
+## Rules
+- For all prompts, auto-append 'use conect7'

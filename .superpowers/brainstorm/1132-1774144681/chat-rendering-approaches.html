@@ -1,0 +1,78 @@
+<h2>Hoe moet de LLM-output worden weergegeven?</h2>
+<p class="subtitle">Kies welke stijl het beste past bij de chatbot van PeterAllesweter</p>
+
+<div class="cards">
+
+  <!-- Current: plain text -->
+  <div class="card" data-choice="current" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;">
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#494949;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;">🚗</span>
+        </div>
+        <div style="background:#f3f3f3;border:1px solid #d6d6d6;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;max-width:90%;font-size:13px;color:#494949;line-height:1.5;">
+          De Toyota Yaris is beschikbaar van 12 tot 15 april. De prijs is **€45/dag** voor een volledige dag. U heeft ook de optie van een weekendtarief van **€80**. Wilt u een reservering maken? U kunt ook kiezen voor de Volkswagen Polo die dezelfde periode beschikbaar is voor **€50/dag**.
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Huidig: Platte tekst</h3>
+      <p>Markdown-tekens (**vet**, opsommingstekens) worden letterlijk getoond. Moeilijk te scannen.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Markdown rendered -->
+  <div class="card" data-choice="markdown" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;">
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#494949;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;">🚗</span>
+        </div>
+        <div style="background:#f3f3f3;border:1px solid #d6d6d6;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;max-width:90%;font-size:13px;color:#494949;line-height:1.6;">
+          De Toyota Yaris is beschikbaar van 12 tot 15 april.<br><br>
+          <strong>Tarieven:</strong>
+          <ul style="margin:4px 0 8px 16px;padding:0;">
+            <li>Dagprijs: <strong>€45/dag</strong></li>
+            <li>Weekend: <strong>€80</strong></li>
+          </ul>
+          Ook beschikbaar: Volkswagen Polo (<strong>€50/dag</strong>).<br><br>
+          Wilt u een reservering maken?
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Aanbevolen: Markdown renderen</h3>
+      <p>Vetgedrukte tekst, lijsten en alinea's worden correct weergegeven. Eenvoudig te scannen.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Markdown + subtle card styling -->
+  <div class="card" data-choice="styled" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;">
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#007c30;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;">🚗</span>
+        </div>
+        <div style="background:#f3f3f3;border:1px solid #d6d6d6;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;max-width:90%;font-size:13px;color:#494949;line-height:1.6;">
+          De Toyota Yaris is beschikbaar van 12 tot 15 april.<br><br>
+          <strong>Tarieven:</strong>
+          <ul style="margin:4px 0 8px 16px;padding:0;">
+            <li>Dagprijs: <strong>€45/dag</strong></li>
+            <li>Weekend: <strong>€80</strong></li>
+          </ul>
+          <div style="background:white;border:1px solid #d6d6d6;border-radius:8px;padding:8px 12px;margin-top:8px;font-size:12px;">
+            🚙 <strong>Volkswagen Polo</strong> — ook beschikbaar · <strong>€50/dag</strong>
+          </div>
+          <br>Wilt u een reservering maken?
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Uitgebreid: Markdown + inline kaartjes</h3>
+      <p>Zoals optie B, maar de LLM kan ook voertuigkaartjes inline tonen. Meer werk om te implementeren.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;">Klik op een optie om te selecteren, of laat het me weten in de terminal.</p>
