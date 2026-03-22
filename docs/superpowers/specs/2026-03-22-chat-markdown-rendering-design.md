@@ -24,6 +24,7 @@ Add `react-markdown` to parse and render markdown in assistant chat bubbles. Upd
 |---|---|
 | `package.json` | Add `react-markdown` dependency |
 | `components/ChatMessage.tsx` | Replace `{message.content}` with `<ReactMarkdown>` for assistant messages |
+| `app/globals.css` | Add `.chat-prose` scoped styles for rendered markdown elements |
 | `lib/llm.ts` | Add markdown formatting instruction to system prompt |
 
 ---
@@ -34,12 +35,12 @@ Add `react-markdown` to parse and render markdown in assistant chat bubbles. Upd
 
 - **User bubble:** unchanged — renders `{message.content}` as plain text with `whitespace-pre-wrap`
 - **Assistant bubble:** replace `{message.content}` with `<ReactMarkdown>` component
-  - Remove `whitespace-pre-wrap` from the bubble (markdown handles line breaks)
+  - Remove `whitespace-pre-wrap` from the assistant bubble only — keep it on the user bubble. The current `className` ternary must be split to apply `whitespace-pre-wrap` conditionally.
   - Add prose-style CSS for the rendered elements (see Styles section)
 
 ### Markdown element styles (scoped to assistant bubble)
 
-Applied via a wrapper `div` with a class (e.g. `chat-prose`) — no Tailwind Typography plugin needed:
+Applied via a wrapper `div` with a class (e.g. `chat-prose`) — no Tailwind Typography plugin needed. These styles are added as plain CSS in `app/globals.css`, compatible with the Tailwind v4 CSS-first setup (no `@apply` with prose utilities).
 
 | Element | Style |
 |---|---|
@@ -84,5 +85,5 @@ Gebruik markdown-opmaak in je antwoorden: **vetgedrukt** voor labels en belangri
 - Bullet lists (`-` or `*`) display as proper `<ul>` lists
 - Numbered lists display as `<ol>`
 - User bubbles are unchanged
-- Streaming works correctly during response generation (markdown renders progressively)
+- Streaming works correctly during response generation (markdown renders progressively). `react-markdown` re-parses on every state update (each SSE chunk) — this is the expected mechanism. Partial markdown (e.g. an unclosed `**`) may briefly show as literal characters until the closing token arrives; this is an accepted trade-off.
 - No visual regressions on existing messages
