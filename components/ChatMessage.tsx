@@ -1,4 +1,3 @@
-import React from 'react';
 import { Car, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage as ChatMessageType } from '@/types';
