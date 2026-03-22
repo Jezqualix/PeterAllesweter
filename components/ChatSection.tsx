@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Bot, User, LogIn, RotateCcw } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { ChatMessage } from '@/types';
 
 interface ChatSectionProps {
@@ -237,13 +238,15 @@ function MessageBubble({ message, isLast, loading }: MessageBubbleProps) {
       </div>
 
       {/* Bubble */}
-      <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-        isUser
-          ? 'bg-brand-600 text-white rounded-tr-sm'
-          : 'bg-white border border-[#d6d6d6] text-[#494949] rounded-tl-sm'
-      } ${isStreaming ? 'streaming-cursor' : ''}`}>
-        {message.content}
-      </div>
+      {isUser ? (
+        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap bg-brand-600 text-white rounded-tr-sm`}>
+          {message.content}
+        </div>
+      ) : (
+        <div className={`chat-prose max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed bg-white border border-[#d6d6d6] text-[#494949] rounded-tl-sm ${isStreaming ? 'streaming-cursor' : ''}`}>
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
+      )}
     </div>
   );
 }
