@@ -85,8 +85,9 @@ export default function ChatWindow() {
         const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
 
         for (const line of lines) {
-          const data = line.slice(6);
-          if (data === '[DONE]') break;
+          const raw = line.slice(6);
+          if (raw === '[DONE]') break;
+          const data = JSON.parse(raw);
           setMessages(prev => {
             const updated = [...prev];
             updated[updated.length - 1] = {
