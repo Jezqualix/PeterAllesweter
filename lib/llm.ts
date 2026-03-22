@@ -1,35 +1,68 @@
-import { Vehicle, ChatMessage } from '@/types';
+import { Vehicle, RentalLocation, ChatMessage } from '@/types';
 
-export function buildSystemPrompt(vehicles: Vehicle[]): string {
-  // Only include available vehicles to keep the prompt compact
-  const available = vehicles.filter(v => v.availabilityStatus === 'available');
+export function buildSystemPrompt(vehicles: Vehicle[], locations: RentalLocation[] = []): string {
+  const available = vehicles.filter(v => v.isAvailable);
 
-  // Compact single-line format per vehicle to stay within context window
-  const vehicleList = available.map(v => {
-    const prices = [
-      v.halfDayPrice  ? `½dag €${v.halfDayPrice}`   : null,
-      v.fullDayPrice  ? `dag €${v.fullDayPrice}`     : null,
-      v.weekendPrice  ? `weekend €${v.weekendPrice}` : null,
-      v.weekPrice     ? `week €${v.weekPrice}`       : null,
-      v.monthPrice    ? `maand €${v.monthPrice}`     : null,
-    ].filter(Boolean).join(', ');
-    return `• ${v.year} ${v.brand} ${v.model} | ${v.type} | ${v.seats}pl | ${v.transmissionType} | ${v.engineTypeName || v.fuelType || ''} | ${prices || 'prijs op aanvraag'} | ${v.locationCity || ''}`;
-  }).join('\n');
+  // Group by brand+model to keep the prompt compact (fleet can be 1000+ vehicles)
+  type ModelGroup = {
+    type: string; seats: number | null; engineCC: number | null;
+    cities: Set<string>; count: number;
+    halfDayPrice?: number | null; fullDayPrice?: number | null;
+    weekPrice?: number | null; monthPrice?: number | null;
+  };
+  const grouped = new Map<string, ModelGroup>();
+
+  for (const v of available) {
+    const key = `${v.brand}|${v.model}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        type: v.type, seats: v.seats, engineCC: v.engineCC, cities: new Set(), count: 0,
+        halfDayPrice: v.halfDayPrice, fullDayPrice: v.fullDayPrice,
+        weekPrice: v.weekPrice, monthPrice: v.monthPrice,
+      });
+    }
+    const g = grouped.get(key)!;
+    g.count++;
+    if (v.locationCity) g.cities.add(v.locationCity);
+  }
+
+  const fleetList = Array.from(grouped.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, g]) => {
+      const [brand, model] = key.split('|');
+      const specs = [
+        g.seats ? `${g.seats}pl` : null,
+        g.engineCC ? `${g.engineCC}cc` : null,
+      ].filter(Boolean).join(', ');
+      const cities = Array.from(g.cities).slice(0, 4).join(', ');
+      const prices = [
+        g.halfDayPrice ? `½dag €${g.halfDayPrice}` : null,
+        g.fullDayPrice ? `dag €${g.fullDayPrice}` : null,
+        g.weekPrice    ? `week €${g.weekPrice}`    : null,
+        g.monthPrice   ? `maand €${g.monthPrice}`  : null,
+      ].filter(Boolean).join(', ');
+      return `• ${brand} ${model} | ${g.type} | ${specs} | ${prices || 'prijs op aanvraag'} | ${g.count}x | ${cities}`;
+    }).join('\n');
 
   return `Je bent een klantenservice-assistent voor PeterAllesweter autoverhuur (België). Antwoord in het Nederlands. Wees vriendelijk en bondig.
 
 Gebruik markdown-opmaak in je antwoorden: **vetgedrukt** voor labels en belangrijke waarden, - opsommingstekens voor meerdere opties of voertuigen. Gebruik geen koppen (#) of code-blokken.
 
-Je kan klanten helpen met: voertuigen zoeken, prijzen en beschikbaarheid, reserveringen.
-Bij een reservering: vraag naar gewenste periode en voertuig.
-Gebruik ALTIJD de prijzen uit de voertuigenlijst hieronder. Bereken nooit zelf een prijs op basis van dagprijs × aantal dagen — elk huurtype heeft een vaste prijs.
-Voertuigtypes in onze vloot: "moto" = motor. Als een klant vraagt naar motoren of motorfietsen, toon dan alleen voertuigen met type "moto".
-Als een klant vraagt naar een voertuigtype dat niet in de lijst staat (bv. campers), zeg dan eerlijk dat we dat type niet verhuren — toon geen andere voertuigen als alternatief tenzij de klant daarom vraagt.
+Je kan klanten helpen met: voertuigen zoeken, prijzen, beschikbaarheid en reserveringen.
+Gebruik ALTIJD de prijzen uit de lijst hieronder. Bereken nooit zelf een prijs op basis van dagprijs × aantal dagen — elk huurtype heeft een vaste prijs.
+Voor verhuur langer dan één maand: zeg dat de prijs op aanvraag is en verwijs naar contact.
+Voertuigtypes in onze vloot: "Motor" = motor/motorfiets. Als een klant vraagt naar motoren, toon enkel voertuigen met type "Motor".
+Als een klant vraagt naar een type dat niet in de lijst staat (bv. campers), zeg dan eerlijk dat we dat niet verhuren.
 
-BESCHIKBARE VOERTUIGEN (${available.length} van ${vehicles.length}):
-${vehicleList || 'Geen voertuigen beschikbaar.'}
+ONZE VLOOT (${grouped.size} modellen, ${available.length} voertuigen beschikbaar):
+${fleetList || 'Geen voertuigen beschikbaar.'}
 
-Contact: ${process.env.CONTACT_EMAIL || 'info@peterallesweter.be'}`;
+VESTIGINGEN (${locations.length}):
+${locations.map(l => `• ${l.name} | ${l.address}, ${l.city} | tel: ${l.phone}${l.email ? ` | e-mail: ${l.email}` : ''}${l.verantwoordelijke ? ` | verantwoordelijke: ${l.verantwoordelijke}` : ''}`).join('\n') || 'Geen vestigingen beschikbaar.'}
+
+Als je een vraag niet kan beantwoorden op basis van bovenstaande gegevens, verwijs de klant dan vriendelijk door: "Voor meer informatie kan u ons bereiken via **peterallesweter@dockx.be**."
+
+Contact: ${process.env.CONTACT_EMAIL || 'peterallesweter@dockx.be'}`;
 }
 
 export async function streamChat(

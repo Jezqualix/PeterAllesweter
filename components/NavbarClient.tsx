@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, Car, LogOut, Shield } from 'lucide-react';
+import { Menu, X, Car, LogOut, Shield, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavbarClientProps {
@@ -42,6 +42,10 @@ export default function NavbarClient({ isAuthenticated, userEmail, isAdmin }: Na
             <a href="#contact" className="text-white/90 hover:text-white text-sm font-medium transition-colors">
               Contact
             </a>
+            <Link href="/chatbot-info" className="flex items-center gap-1.5 text-white/90 hover:text-white text-sm font-medium transition-colors">
+              <HelpCircle className="h-4 w-4" />
+              Wat kan ik vragen?
+            </Link>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
@@ -94,6 +98,9 @@ export default function NavbarClient({ isAuthenticated, userEmail, isAdmin }: Na
           <a href="#contact" className="text-white text-sm font-medium py-2" onClick={() => setMenuOpen(false)}>
             Contact
           </a>
+          <Link href="/chatbot-info" className="flex items-center gap-1.5 text-white text-sm font-medium py-2" onClick={() => setMenuOpen(false)}>
+            <HelpCircle className="h-4 w-4" /> Wat kan ik vragen?
+          </Link>
           {isAuthenticated ? (
             <>
               {isAdmin && (

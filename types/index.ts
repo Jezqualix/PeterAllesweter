@@ -1,11 +1,3 @@
-export interface EngineType {
-  id: number;
-  name: string;
-  fuelType: string;
-  co2Category: string;
-  description?: string | null;
-}
-
 export interface RentalLocation {
   id: number;
   name: string;
@@ -14,51 +6,35 @@ export interface RentalLocation {
   phone: string;
   email: string;
   isActive: boolean;
-}
-
-export interface VehiclePricing {
-  id: number;
-  vehicleId: number;
-  halfDayPrice: number;
-  fullDayPrice: number;
-  weekendPrice: number;
-  weekPrice: number;
-  monthPrice: number;
-  validFrom: string;
-  validUntil: string | null;
-  lastUpdated: string;
+  verantwoordelijke?: string | null;
 }
 
 export interface Vehicle {
   id: number;
-  brand: string;      // DB column: brand (not make)
-  model: string;
-  type: string;       // lowercase: 'hatchback', 'sedan', 'suv', ...
   licensePlate: string;
-  year: number;
-  seats: number;
-  engineTypeId: number;
-  engineCC: number | null;
-  powerKW: number | null;
-  transmissionType: string;  // 'manual' | 'automatic'
-  availabilityStatus: 'available' | 'unavailable' | 'rented' | 'reserved' | 'maintenance';
+  modelId: number;
+  color: string | null;
+  options: string | null;
   locationId: number;
-  mileage: number;
-  lastUpdated?: string;
-  notes: string | null;
-  // Joined fields from EngineTypes
-  engineTypeName?: string;
-  fuelType?: string;
-  co2Category?: string;
-  // Joined fields from RentalLocations
+  availabilityStatus: string;   // Dutch string from DB: 'Beschikbaar', 'Verhuurd', etc.
+  statusId: number;
+  statusNote: string | null;
+  // Joined from Modellen
+  type: string;
+  brand: string;
+  model: string;
+  seats: number | null;
+  engineCC: number | null;
+  // Joined from Locaties
   locationName?: string;
   locationCity?: string;
-  // Joined fields from VehiclePricing (validUntil IS NULL)
-  halfDayPrice?: number;
-  fullDayPrice?: number;
-  weekendPrice?: number;
-  weekPrice?: number;
-  monthPrice?: number;
+  // Joined from VoertuigStatussen
+  isAvailable?: boolean;
+  // Joined from ModelPrijzen
+  halfDayPrice?: number | null;
+  fullDayPrice?: number | null;
+  weekPrice?: number | null;
+  monthPrice?: number | null;
 }
 
 export interface Rental {
@@ -69,14 +45,14 @@ export interface Rental {
   customerEmail: string;
   startDateTime: string;
   endDateTime: string;
-  rentalPeriodType: 'halfDay' | 'fullDay' | 'weekend' | 'week' | 'month';
+  rentalPeriodType: string;
   totalPrice: number;
-  status: 'confirmed' | 'active' | 'completed' | 'cancelled';
+  status: string;
   createdAt: string;
 }
 
 export interface Conversation {
-  conversationId: string;   // e.g. "conv_1773937888165_0t8hfdb"
+  conversationId: string;
   userId: string;
   timestamp: string;
   messageCount?: number;
@@ -84,7 +60,7 @@ export interface Conversation {
 
 export interface Message {
   messageId: number;
-  conversationId: string;   // FK → Conversations.conversationId (string)
+  conversationId: string;
   role: string;
   content: string;
   timestamp: string;
@@ -93,7 +69,7 @@ export interface Message {
 
 export interface VehicleQuery {
   id: number;
-  conversationId: string;   // FK → Conversations.conversationId (string)
+  conversationId: string;
   vehicleId?: number | null;
   queryType: string;
   response?: string | null;
@@ -132,8 +108,6 @@ export interface VehicleFilters {
   model?: string;
   type?: string;
   seats?: number;
-  transmissionType?: string;
-  fuelType?: string;
   locationId?: number;
   availableFrom?: string;
   availableTo?: string;
@@ -146,6 +120,6 @@ export interface CreateRentalInput {
   customerEmail: string;
   startDateTime: string;
   endDateTime: string;
-  rentalPeriodType: Rental['rentalPeriodType'];
+  rentalPeriodType: string;
   totalPrice: number;
 }

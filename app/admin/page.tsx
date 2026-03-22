@@ -12,48 +12,58 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Vehicle, EngineType, Conversation, Message, AdminUser } from '@/types';
+import { Vehicle, RentalLocation, Conversation, Message, AdminUser } from '@/types';
 
 // ─── Vehicle Form ─────────────────────────────────────────────────────────────
 
+interface ModelOption {
+  id: number; type: string; merk: string; modelNaam: string;
+  aantalZitplaatsen: number | null; motorInhoud: number | null;
+}
+
 interface VehicleFormData {
-  brand: string; model: string; type: string; seats: string; licensePlate: string;
-  year: string; engineTypeId: string; engineCC: string; powerKW: string;
-  transmissionType: string; mileage: string; availabilityStatus: string;
-  locationId: string; notes: string;
-  halfDayPrice: string; fullDayPrice: string; weekendPrice: string;
-  weekPrice: string; monthPrice: string;
+  licensePlate: string;
+  modelId: string;
+  color: string;
+  options: string;
+  locationId: string;
+  statusId: string;
+  statusNote: string;
 }
 
 const emptyForm: VehicleFormData = {
-  brand: '', model: '', type: 'sedan', seats: '5', licensePlate: '',
-  year: String(new Date().getFullYear()),
-  engineTypeId: '1', engineCC: '', powerKW: '', transmissionType: 'manual',
-  mileage: '0', availabilityStatus: 'available', locationId: '1', notes: '',
-  halfDayPrice: '', fullDayPrice: '', weekendPrice: '', weekPrice: '', monthPrice: '',
+  licensePlate: '', modelId: '', color: '', options: '',
+  locationId: '', statusId: '1', statusNote: '',
 };
 
 function vehicleToForm(v: Vehicle): VehicleFormData {
   return {
-    brand: v.brand, model: v.model, type: v.type, seats: String(v.seats),
-    licensePlate: v.licensePlate, year: String(v.year),
-    engineTypeId: String(v.engineTypeId), engineCC: String(v.engineCC || ''),
-    powerKW: String(v.powerKW || ''), transmissionType: v.transmissionType,
-    mileage: String(v.mileage || 0), availabilityStatus: v.availabilityStatus,
-    locationId: String(v.locationId), notes: v.notes || '',
-    halfDayPrice: v.halfDayPrice ? String(v.halfDayPrice) : '',
-    fullDayPrice: v.fullDayPrice ? String(v.fullDayPrice) : '',
-    weekendPrice: v.weekendPrice ? String(v.weekendPrice) : '',
-    weekPrice: v.weekPrice ? String(v.weekPrice) : '',
-    monthPrice: v.monthPrice ? String(v.monthPrice) : '',
+    licensePlate: v.licensePlate,
+    modelId: String(v.modelId),
+    color: v.color || '',
+    options: v.options || '',
+    locationId: String(v.locationId),
+    statusId: String(v.statusId),
+    statusNote: v.statusNote || '',
   };
 }
 
 // ─── Vehicles Tab ─────────────────────────────────────────────────────────────
 
+const STATUSSEN = [
+  { id: 1, naam: 'Beschikbaar' },
+  { id: 2, naam: 'Gereserveerd' },
+  { id: 3, naam: 'Verhuurd' },
+  { id: 4, naam: 'Onderhoud' },
+  { id: 5, naam: 'Niet beschikbaar' },
+  { id: 6, naam: 'Gesloopt' },
+  { id: 7, naam: 'Verkocht' },
+];
+
 function VehiclesTab() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [engineTypes, setEngineTypes] = useState<EngineType[]>([]);
+  const [modellen, setModellen] = useState<ModelOption[]>([]);
+  const [locations, setLocations] = useState<RentalLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
@@ -63,12 +73,14 @@ function VehiclesTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [vRes, eRes] = await Promise.all([
+    const [vRes, mRes, lRes] = await Promise.all([
       fetch('/api/vehicles'),
       fetch('/api/engine-types'),
+      fetch('/api/locations'),
     ]);
     if (vRes.ok) setVehicles(await vRes.json());
-    if (eRes.ok) setEngineTypes(await eRes.json());
+    if (mRes.ok) setModellen(await mRes.json());
+    if (lRes.ok) setLocations(await lRes.json());
     setLoading(false);
   }, []);
 
@@ -89,25 +101,13 @@ function VehiclesTab() {
   async function handleSave() {
     setSaving(true);
     const body = {
-      brand:               form.brand,
-      model:               form.model,
-      type:                form.type,
-      seats:               Number(form.seats),
-      licensePlate:        form.licensePlate,
-      year:                Number(form.year),
-      engineTypeId:        Number(form.engineTypeId),
-      engineCC:            Number(form.engineCC)  || undefined,
-      powerKW:             Number(form.powerKW)   || undefined,
-      transmissionType:    form.transmissionType,
-      mileage:             Number(form.mileage)   || 0,
-      availabilityStatus:  form.availabilityStatus as Vehicle['availabilityStatus'],
-      locationId:          Number(form.locationId),
-      notes:               form.notes || undefined,
-      halfDayPrice:        form.halfDayPrice ? Number(form.halfDayPrice) : undefined,
-      fullDayPrice:        form.fullDayPrice ? Number(form.fullDayPrice) : undefined,
-      weekendPrice:        form.weekendPrice ? Number(form.weekendPrice) : undefined,
-      weekPrice:           form.weekPrice    ? Number(form.weekPrice)    : undefined,
-      monthPrice:          form.monthPrice   ? Number(form.monthPrice)   : undefined,
+      licensePlate: form.licensePlate,
+      modelId:      Number(form.modelId),
+      color:        form.color || null,
+      options:      form.options || null,
+      locationId:   Number(form.locationId),
+      statusId:     Number(form.statusId),
+      statusNote:   form.statusNote || null,
     };
 
     const res = editVehicle
@@ -135,12 +135,11 @@ function VehiclesTab() {
   const field = (key: keyof VehicleFormData, value: string) =>
     setForm(f => ({ ...f, [key]: value }));
 
-  const statusBadge = (status: string) => {
-    if (status === 'available')   return <Badge variant="available">Beschikbaar</Badge>;
-    if (status === 'rented')      return <Badge variant="reserved">Verhuurd</Badge>;
-    if (status === 'reserved')    return <Badge variant="reserved">Gereserveerd</Badge>;
-    if (status === 'maintenance') return <Badge variant="maintenance">Onderhoud</Badge>;
-    return <Badge variant="unavailable">Niet beschikbaar</Badge>;
+  const statusBadge = (status: string, isAvailable?: boolean) => {
+    if (isAvailable)                    return <Badge variant="available">{status}</Badge>;
+    if (status === 'Onderhoud')         return <Badge variant="maintenance">{status}</Badge>;
+    if (status === 'Gereserveerd' || status === 'Verhuurd') return <Badge variant="reserved">{status}</Badge>;
+    return <Badge variant="unavailable">{status}</Badge>;
   };
 
   if (loading) return (
@@ -164,10 +163,11 @@ function VehiclesTab() {
             <tr>
               <th className="text-left px-4 py-3 text-[#616161] font-medium">Voertuig</th>
               <th className="text-left px-4 py-3 text-[#616161] font-medium">Kenteken</th>
-              <th className="text-left px-4 py-3 text-[#616161] font-medium">Motor</th>
-              <th className="text-right px-4 py-3 text-[#616161] font-medium">½dag</th>
+              <th className="text-right px-4 py-3 text-[#616161] font-medium">½ dag</th>
               <th className="text-right px-4 py-3 text-[#616161] font-medium">Dag</th>
               <th className="text-right px-4 py-3 text-[#616161] font-medium">Week</th>
+              <th className="text-right px-4 py-3 text-[#616161] font-medium">Maand</th>
+              <th className="text-left px-4 py-3 text-[#616161] font-medium">Locatie</th>
               <th className="text-left px-4 py-3 text-[#616161] font-medium">Status</th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -176,21 +176,16 @@ function VehiclesTab() {
             {vehicles.map(v => (
               <tr key={v.id} className="hover:bg-[#f9f9f9]">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-[#494949]">{v.year} {v.brand} {v.model}</div>
-                  <div className="text-xs text-[#616161]">{v.type} · {v.seats} zitpl. · {v.transmissionType}</div>
+                  <div className="font-medium text-[#494949]">{v.brand} {v.model}</div>
+                  <div className="text-xs text-[#616161]">{v.type}{v.seats ? ` · ${v.seats} zitpl.` : ''}{v.engineCC ? ` · ${v.engineCC}cc` : ''}</div>
                 </td>
                 <td className="px-4 py-3 text-[#616161] font-mono text-xs">{v.licensePlate}</td>
-                <td className="px-4 py-3 text-[#616161]">{v.engineTypeName || '—'}</td>
-                <td className="px-4 py-3 text-right text-[#494949]">
-                  {v.halfDayPrice ? `€${Number(v.halfDayPrice).toFixed(0)}` : '—'}
-                </td>
-                <td className="px-4 py-3 text-right text-[#494949]">
-                  {v.fullDayPrice ? `€${Number(v.fullDayPrice).toFixed(0)}` : '—'}
-                </td>
-                <td className="px-4 py-3 text-right text-[#494949]">
-                  {v.weekPrice ? `€${Number(v.weekPrice).toFixed(0)}` : '—'}
-                </td>
-                <td className="px-4 py-3">{statusBadge(v.availabilityStatus)}</td>
+                <td className="px-4 py-3 text-right text-[#494949] text-xs">{v.halfDayPrice ? `€${Number(v.halfDayPrice).toFixed(0)}` : '—'}</td>
+                <td className="px-4 py-3 text-right text-[#494949] text-xs">{v.fullDayPrice ? `€${Number(v.fullDayPrice).toFixed(0)}` : '—'}</td>
+                <td className="px-4 py-3 text-right text-brand-600 text-xs font-medium">{v.weekPrice ? `€${Number(v.weekPrice).toFixed(0)}` : '—'}</td>
+                <td className="px-4 py-3 text-right text-brand-600 text-xs font-medium">{v.monthPrice ? `€${Number(v.monthPrice).toFixed(0)}` : '—'}</td>
+                <td className="px-4 py-3 text-[#616161]">{v.locationCity || '—'}</td>
+                <td className="px-4 py-3">{statusBadge(v.availabilityStatus, v.isAvailable)}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1 justify-end">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(v)} title="Bewerken">
@@ -209,62 +204,24 @@ function VehiclesTab() {
 
       {/* Vehicle dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editVehicle ? 'Voertuig bewerken' : 'Nieuw voertuig'}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
-            {([
-              ['brand',       'Merk',                'text'],
-              ['model',       'Model',               'text'],
-              ['licensePlate','Kenteken',             'text'],
-              ['year',        'Jaar',                'number'],
-              ['seats',       'Zitplaatsen',         'number'],
-              ['mileage',     'Kilometerstand',      'number'],
-              ['engineCC',    'Motorinhoud (cc)',    'number'],
-              ['powerKW',     'Vermogen (kW)',       'number'],
-            ] as [keyof VehicleFormData, string, string][]).map(([k, label, type]) => (
-              <div key={k} className="space-y-1">
-                <Label>{label}</Label>
-                <Input
-                  type={type}
-                  value={form[k]}
-                  onChange={e => field(k, e.target.value)}
-                />
-              </div>
-            ))}
-
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={v => field('type', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {['hatchback','sedan','suv','minivan','van'].map(t => (
-                    <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1 col-span-2">
+              <Label>Kenteken</Label>
+              <Input value={form.licensePlate} onChange={e => field('licensePlate', e.target.value)} placeholder="1-ABC-123" />
             </div>
 
-            <div className="space-y-1">
-              <Label>Transmissie</Label>
-              <Select value={form.transmissionType} onValueChange={v => field('transmissionType', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+            <div className="space-y-1 col-span-2">
+              <Label>Model</Label>
+              <Select value={form.modelId} onValueChange={v => field('modelId', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecteer model..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="manual">Manueel</SelectItem>
-                  <SelectItem value="automatic">Automaat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Motortype</Label>
-              <Select value={form.engineTypeId} onValueChange={v => field('engineTypeId', v)}>
-                <SelectTrigger><SelectValue placeholder="Selecteer..." /></SelectTrigger>
-                <SelectContent>
-                  {engineTypes.map(e => (
-                    <SelectItem key={e.id} value={String(e.id)}>
-                      {e.name} ({e.fuelType})
+                  {modellen.map(m => (
+                    <SelectItem key={m.id} value={String(m.id)}>
+                      {m.merk} {m.modelNaam} ({m.type}{m.aantalZitplaatsen ? `, ${m.aantalZitplaatsen}pl` : ''})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -272,53 +229,42 @@ function VehiclesTab() {
             </div>
 
             <div className="space-y-1">
+              <Label>Kleur</Label>
+              <Input value={form.color} onChange={e => field('color', e.target.value)} placeholder="Blauw" />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Locatie</Label>
+              <Select value={form.locationId} onValueChange={v => field('locationId', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecteer..." /></SelectTrigger>
+                <SelectContent>
+                  {locations.map(l => (
+                    <SelectItem key={l.id} value={String(l.id)}>{l.name} ({l.city})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
               <Label>Status</Label>
-              <Select value={form.availabilityStatus} onValueChange={v => field('availabilityStatus', v)}>
+              <Select value={form.statusId} onValueChange={v => field('statusId', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="available">Beschikbaar</SelectItem>
-                  <SelectItem value="rented">Verhuurd</SelectItem>
-                  <SelectItem value="reserved">Gereserveerd</SelectItem>
-                  <SelectItem value="maintenance">Onderhoud</SelectItem>
-                  <SelectItem value="unavailable">Niet beschikbaar</SelectItem>
+                  {STATUSSEN.map(s => (
+                    <SelectItem key={s.id} value={String(s.id)}>{s.naam}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1 col-span-2">
-              <Label>Notities</Label>
-              <Input
-                value={form.notes}
-                onChange={e => field('notes', e.target.value)}
-                placeholder="Optionele opmerkingen..."
-              />
+              <Label>Opties</Label>
+              <Input value={form.options} onChange={e => field('options', e.target.value)} placeholder="Airco, Navigatie, ..." />
             </div>
 
-            {/* Pricing */}
-            <div className="col-span-2">
-              <p className="text-sm font-semibold text-[#494949] mb-3 mt-1 border-t border-[#d6d6d6] pt-3">
-                Prijzen (€)
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                {([
-                  ['halfDayPrice','½ dag'],
-                  ['fullDayPrice','Dag'],
-                  ['weekendPrice','Weekend'],
-                  ['weekPrice',  'Week'],
-                  ['monthPrice', 'Maand'],
-                ] as [keyof VehicleFormData, string][]).map(([k, label]) => (
-                  <div key={k} className="space-y-1">
-                    <Label>{label}</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form[k]}
-                      onChange={e => field(k, e.target.value)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-1 col-span-2">
+              <Label>Statusopmerking</Label>
+              <Input value={form.statusNote} onChange={e => field('statusNote', e.target.value)} placeholder="Optionele opmerking..." />
             </div>
           </div>
           <DialogFooter>

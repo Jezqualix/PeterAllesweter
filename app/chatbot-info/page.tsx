@@ -1,36 +1,43 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
-import ChatSection from '@/components/ChatSection';
 import { getVehicles, getRentalLocations, getModellen } from '@/lib/db';
-import { getUser } from '@/lib/auth';
 import {
-  MapPin, Phone, Mail, ChevronDown, ChevronRight,
-  Car, Bike, Truck, Search, Calendar, HelpCircle, MessageSquare,
+  Car, MapPin, Search, Calendar, HelpCircle,
+  MessageSquare, Bike, Truck, ChevronRight,
 } from 'lucide-react';
+import Link from 'next/link';
 
-export default async function HomePage() {
-  const [vehicles, locations, modellen, user] = await Promise.all([
+export const metadata = {
+  title: 'Wat kan u vragen? — PeterAllesweter',
+  description: 'Ontdek welke vragen u aan de PeterAllesweter chatbot kan stellen over ons wagenpark, beschikbaarheid en locaties.',
+};
+
+export default async function ChatbotInfoPage() {
+  const [vehicles, locations, modellen] = await Promise.all([
     getVehicles().catch(() => []),
     getRentalLocations().catch(() => []),
     getModellen().catch(() => []),
-    getUser(),
   ]);
 
   const beschikbaar = vehicles.filter(v => v.isAvailable).length;
 
+  // Group by type
   const byType = vehicles.reduce<Record<string, number>>((acc, v) => {
     const t = v.type || 'Overig';
     acc[t] = (acc[t] || 0) + 1;
     return acc;
   }, {});
 
+  // Unique brands
   const merken = [...new Set(vehicles.map(v => v.brand).filter(Boolean))].sort();
+
+  // Unique cities from locations
   const steden = [...new Set(locations.map(l => l.city).filter(Boolean))].sort();
 
   const typeIcon = (type: string) => {
-    if (type === 'Motor')        return <Bike className="h-5 w-5" />;
-    if (type === 'Bestelwagen')  return <Truck className="h-5 w-5" />;
-    if (type === 'Aanhangwagen') return <Truck className="h-5 w-5" />;
+    if (type === 'Motor')       return <Bike className="h-5 w-5" />;
+    if (type === 'Bestelwagen') return <Truck className="h-5 w-5" />;
+    if (type === 'Aanhangwagen')return <Truck className="h-5 w-5" />;
     return <Car className="h-5 w-5" />;
   };
 
@@ -40,9 +47,11 @@ export default async function HomePage() {
       icon: <Search className="h-5 w-5 text-brand-600" />,
       vragen: [
         'Welke auto\'s hebben jullie beschikbaar?',
+        'Toon me alle SUV\'s in Gent.',
         'Hebben jullie motors te huur?',
         'Ik zoek een bestelwagen voor een verhuizing.',
         'Welke voertuigen zijn beschikbaar in Antwerpen?',
+        'Hoeveel zitplaatsen heeft de Toyota Corolla?',
       ],
     },
     {
@@ -51,8 +60,8 @@ export default async function HomePage() {
       vragen: [
         'Is de BMW 3 Serie beschikbaar volgende week?',
         'Ik wil een auto huren van 1 tot 5 april.',
+        'Welke voertuigen zijn vrij in het weekend?',
         'Is er een bestelwagen beschikbaar in Brussel?',
-        'Welke voertuigen zijn vrij dit weekend?',
       ],
     },
     {
@@ -60,9 +69,9 @@ export default async function HomePage() {
       icon: <MapPin className="h-5 w-5 text-brand-600" />,
       vragen: [
         'Waar zijn jullie vestigingen?',
+        'Hebben jullie een kantoor in Leuven?',
         'Wat is het adres van de vestiging in Brugge?',
         'In welke steden kan ik een voertuig ophalen?',
-        'Hebben jullie een kantoor in Leuven?',
       ],
     },
     {
@@ -70,9 +79,9 @@ export default async function HomePage() {
       icon: <MessageSquare className="h-5 w-5 text-brand-600" />,
       vragen: [
         'Wat kost het om een auto te huren?',
-        'Wat is de weekprijs van de VW Golf?',
-        'Ik wil de Toyota Corolla reserveren.',
-        'Kan ik een offerte krijgen voor een maandverhuur?',
+        'Ik wil de Volkswagen Golf reserveren.',
+        'Hoe kan ik een voertuig reserveren?',
+        'Kan ik een offerte krijgen voor een weekverhuur?',
       ],
     },
     {
@@ -92,26 +101,23 @@ export default async function HomePage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-brand-900 via-brand-700 to-brand-600 text-white py-24 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-block bg-accent text-brand-900 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
-            Autoverhuur in België
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4">
-            Uw perfecte rijervaring<br />begint hier
+      <section className="bg-gradient-to-br from-brand-900 via-brand-700 to-brand-600 text-white py-16 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm mb-4">
+            <MessageSquare className="h-4 w-4 text-accent" />
+            <span>Intelligente chatassistent</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+            Wat kan u aan onze chatbot vragen?
           </h1>
-          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Van stadsrit tot weekendgetaway — wij hebben het voertuig dat bij u past.
-            Met {locations.length} vestigingen door heel België, altijd in de buurt.
+          <p className="text-white/75 text-base max-w-xl mx-auto">
+            Onze chatbot heeft toegang tot realtime gegevens over ons volledige wagenpark.
+            Hieronder vindt u een overzicht van wat u allemaal kan opvragen.
           </p>
-          <a href="#chat" className="btn-cta inline-flex items-center gap-2">
-            Stel uw vraag aan de assistent
-            <ChevronDown className="h-4 w-4" />
-          </a>
         </div>
       </section>
 
-      {/* Live stats bar */}
+      {/* Fleet stats */}
       <section className="bg-white border-b border-[#d6d6d6] py-8 px-4">
         <div className="max-w-5xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#616161] mb-5 text-center">
@@ -138,16 +144,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Chat */}
-      <ChatSection isAuthenticated={!!user} userEmail={user?.email} />
-
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
 
         {/* Vehicle types */}
         <section>
           <h2 className="text-xl font-bold text-[#494949] mb-4">Voertuigtypes in onze vloot</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Object.entries(byType).sort(([, a], [, b]) => b - a).map(([type, count]) => (
+            {Object.entries(byType).sort(([,a],[,b]) => b - a).map(([type, count]) => (
               <div key={type} className="flex items-center gap-3 p-4 bg-white rounded-xl border border-[#d6d6d6]">
                 <span className="text-brand-600">{typeIcon(type)}</span>
                 <div>
@@ -173,7 +176,7 @@ export default async function HomePage() {
 
         {/* Locations */}
         <section>
-          <h2 className="text-xl font-bold text-[#494949] mb-4">Onze vestigingen</h2>
+          <h2 className="text-xl font-bold text-[#494949] mb-4">Vestigingen</h2>
           <div className="flex flex-wrap gap-2">
             {steden.map(stad => (
               <span key={stad} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#d6d6d6] rounded-full text-sm text-[#494949]">
@@ -237,11 +240,8 @@ export default async function HomePage() {
 
         {/* Example questions */}
         <section>
-          <h2 className="text-xl font-bold text-[#494949] mb-2">Wat kan u aan de chatbot vragen?</h2>
-          <p className="text-sm text-[#616161] mb-6">
-            Onze assistent heeft toegang tot realtime gegevens over het volledige wagenpark.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <h2 className="text-xl font-bold text-[#494949] mb-6">Voorbeeldvragen per onderwerp</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {voorbeeldVragen.map(cat => (
               <div key={cat.categorie} className="bg-white rounded-xl border border-[#d6d6d6] p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -261,48 +261,22 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* CTA */}
+        <section className="text-center py-6">
+          <p className="text-[#616161] mb-4">Klaar om te starten? Stel uw vraag direct op de homepage.</p>
+          <Link
+            href="/#chat"
+            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Naar de chatbot
+          </Link>
+        </section>
+
       </div>
 
-      {/* Footer */}
-      <footer id="contact" className="bg-brand-900 text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <h3 className="font-bold text-lg mb-3 text-accent">PeterAllesweter</h3>
-            <p className="text-white/70 text-sm leading-relaxed">
-              Professionele autoverhuur in België.<br />
-              {locations.length} vestigingen door heel het land.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-bold text-sm uppercase tracking-wider mb-3 text-white/60">Contact</h3>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-accent" />
-                <a href={`mailto:${process.env.CONTACT_EMAIL || 'peterallesweter@dockx.be'}`} className="hover:text-white">
-                  {process.env.CONTACT_EMAIL || 'peterallesweter@dockx.be'}
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-accent" />
-                <span>+32 (0)2 123 45 67</span>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold text-sm uppercase tracking-wider mb-3 text-white/60">Vestigingen</h3>
-            <ul className="space-y-1 text-sm text-white/80 columns-2">
-              {steden.map(stad => (
-                <li key={stad} className="flex items-center gap-1.5">
-                  <MapPin className="h-3 w-3 text-accent shrink-0" />
-                  {stad}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-white/10 text-center text-white/40 text-xs">
-          © {new Date().getFullYear()} PeterAllesweter. Alle rechten voorbehouden.
-        </div>
+      <footer className="bg-brand-900 text-white/50 text-xs text-center py-6 px-4">
+        © {new Date().getFullYear()} PeterAllesweter. Alle rechten voorbehouden.
       </footer>
     </>
   );

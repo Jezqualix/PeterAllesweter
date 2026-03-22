@@ -41,6 +41,13 @@ export default function ChatSection({ isAuthenticated, userEmail }: ChatSectionP
     setInput('');
   }, []);
 
+  // Reset chat when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      resetSession();
+    }
+  }, [isAuthenticated, resetSession]);
+
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || loading) return;

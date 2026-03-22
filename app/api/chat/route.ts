@@ -5,6 +5,7 @@ import {
   getMessages,
   saveMessage,
   getVehicles,
+  getRentalLocations,
 } from '@/lib/db';
 import { buildSystemPrompt, streamChat } from '@/lib/llm';
 import { rateLimit } from '@/lib/rateLimit';
@@ -70,8 +71,8 @@ export async function POST(request: NextRequest) {
     await saveMessage(conversationId, 'user', message);
 
     // Build LLM context
-    const vehicles = await getVehicles();
-    const systemPrompt = buildSystemPrompt(vehicles);
+    const [vehicles, locations] = await Promise.all([getVehicles(), getRentalLocations()]);
+    const systemPrompt = buildSystemPrompt(vehicles, locations);
     const modelName = process.env.LLM_MODEL || 'local-model';
 
     const llmMessages: ChatMessage[] = [

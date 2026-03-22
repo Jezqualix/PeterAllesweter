@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Car, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,13 @@ function LoginForm() {
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Inloggen
       </Button>
+
+      <p className="text-center text-sm text-[#616161] mt-5">
+        Nog geen account?{' '}
+        <Link href="/register" className="text-brand-600 hover:underline font-medium">
+          Registreren
+        </Link>
+      </p>
     </form>
   );
 }
@@ -96,8 +104,8 @@ export default function LoginPage() {
           <div className="w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center mx-auto mb-3">
             <Car className="h-6 w-6 text-white" />
           </div>
-          <CardTitle className="text-xl">Admin Login</CardTitle>
-          <CardDescription>PeterAllesweter Beheerpaneel</CardDescription>
+          <CardTitle className="text-xl">Inloggen</CardTitle>
+          <CardDescription>PeterAllesweter</CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense fallback={<div className="h-40 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-brand-600" /></div>}>

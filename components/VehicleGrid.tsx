@@ -12,7 +12,7 @@ export default function VehicleGrid({ vehicles }: VehicleGridProps) {
   function handleReserve(vehicle: Vehicle) {
     // Open the chatbot and pre-fill a reservation message
     const event = new CustomEvent('open-chat', {
-      detail: { message: `Ik wil graag de ${vehicle.year} ${vehicle.brand} ${vehicle.model} reserveren. Wat zijn de stappen?` },
+      detail: { message: `Ik wil graag de ${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) reserveren. Wat zijn de stappen?` },
     });
     window.dispatchEvent(event);
   }
